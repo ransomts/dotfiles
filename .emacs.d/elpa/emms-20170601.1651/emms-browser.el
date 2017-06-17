@@ -1383,7 +1383,7 @@ Disabled by default."
 
 (defun emms-browser-lookup-pitchfork (field)
   (emms-browser-lookup
-   field "http://www.pitchforkmedia.com/search/record_reviews/query?query[keywords]="))
+   field "http://www.pitchfork.com/search/query?query[keywords]="))
 
 (defun emms-browser-lookup-artist-on-wikipedia ()
   (interactive)
