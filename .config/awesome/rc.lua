@@ -20,6 +20,8 @@ local lain          = require("lain")
 --local menubar       = require("menubar")
 local freedesktop   = require("freedesktop")
 local hotkeys_popup = require("awful.hotkeys_popup").widget
+
+local cyclefocus = require('cyclefocus')
 -- }}}
 
 -- {{{ Error handling
@@ -221,7 +223,16 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey,           }, "Right",  awful.tag.viewnext,
               {description = "view next", group = "tag"}),
     awful.key({ modkey,           }, "Escape", awful.tag.history.restore,
-              {description = "go back", group = "tag"}),
+       {description = "go back", group = "tag"}),
+
+    -- modkey+Tab: cycle through all clients.
+    awful.key({ modkey }, "Tab", function(c)
+	  cyclefocus.cycle({modifier="Super_L"})
+    end),
+    -- modkey+Shift+Tab: backwards
+    awful.key({ modkey, "Shift" }, "Tab", function(c)
+	  cyclefocus.cycle({modifier="Super_L"})
+    end),
 
     -- Non-empty tag browsing
     --awful.key({ altkey }, "Left", function () lain.util.tag_view_nonempty(-1) end,
@@ -278,14 +289,14 @@ globalkeys = awful.util.table.join(
               {description = "focus the previous screen", group = "screen"}),
     awful.key({ modkey,           }, "u", awful.client.urgent.jumpto,
               {description = "jump to urgent client", group = "client"}),
-    awful.key({ modkey,           }, "Tab",
-        function ()
-            awful.client.focus.history.previous()
-            if client.focus then
-                client.focus:raise()
-            end
-        end,
-        {description = "go back", group = "client"}),
+    -- awful.key({ modkey,           }, "Tab",
+    --     function ()
+    --         awful.client.focus.history.previous()
+    --         if client.focus then
+    --             client.focus:raise()
+    --         end
+    --     end,
+    --     {description = "go back", group = "client"}),
 
     -- Show/Hide Wibox
     awful.key({ modkey }, "b", function ()
@@ -480,7 +491,27 @@ clientkeys = awful.util.table.join(
             c.maximized = not c.maximized
             c:raise()
         end ,
-        {description = "maximize", group = "client"})
+        {description = "maximize", group = "client"}),
+     -- Alt-`: cycle through clients with the same class name.
+    cyclefocus.key({ "Mod1", }, "#49", 1, {
+    	  cycle_filter = function (c, source_c) return c.class == source_c.class end,
+    	  keys = { "°", "^" },  -- the keys to be handled, wouldn't be required if the keycode was available in keygrabber.
+    }),
+    cyclefocus.key({ "Mod1", "Shift", }, "#49", -1, {  -- keycode #49 => ^/° on german keyboard, upper left below Escape and next to 1.
+    	  cycle_filter = function (c, source_c) return c.class == source_c.class end,
+    	  keys = { "°", "^" },  -- the keys to be handled, wouldn't be required if the keycode was available in keygrabber.
+    }),
+
+    -- Alt-Tab: cycle through clients on the same screen.
+    -- This must be a clientkeys mapping to have source_c available in the callback.
+    cyclefocus.key({ "Mod1", }, "Tab", {
+	  -- cycle_filters as a function callback:
+	  -- cycle_filters = { function (c, source_c) return c.screen == source_c.screen end },
+
+	  -- cycle_filters from the default filters:
+	  cycle_filters = { cyclefocus.filters.same_screen, cyclefocus.filters.common_tag },
+	  keys = {'Tab', 'ISO_Left_Tab'}  -- default, could be left out
+    })
 )
 
 -- Bind all key numbers to tags.
@@ -567,8 +598,8 @@ awful.rules.rules = {
     --{ rule = { class = "Firefox" },
     --  properties = { screen = 1, tag = screen[1].tags[1] } },
 
-    { rule = { class = "Gimp", role = "gimp-image-window" },
-          properties = { maximized = true } },
+    --{ rule = { class = "Gimp", role = "gimp-image-window" },
+    --      properties = { maximized = true } },
 }
 -- }}}
 

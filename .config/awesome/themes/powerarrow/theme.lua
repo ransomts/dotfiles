@@ -70,7 +70,7 @@ theme.widget_music                              = theme.dir .. "/icons/note.png"
 theme.widget_music_on                           = theme.dir .. "/icons/note_on.png"
 theme.widget_music_pause                        = theme.dir .. "/icons/pause.png"
 theme.widget_music_stop                         = theme.dir .. "/icons/stop.png"
-theme.widget_vol                                = theme.dir .. "/icons/vol.png"
+theme.widget_vol                                = theme.dir .. "/icons/spkr.png"
 theme.widget_vol_low                            = theme.dir .. "/icons/vol_low.png"
 theme.widget_vol_no                             = theme.dir .. "/icons/vol_no.png"
 theme.widget_vol_mute                           = theme.dir .. "/icons/vol_mute.png"
@@ -114,7 +114,6 @@ local binclock = require("themes.powerarrow.binclock"){
 local binclock = wibox.widget.textclock(" %H:%M ")
 binclock.font = theme.font
 
-
 -- Calendar
 theme.cal = lain.widget.calendar({
     --cal = "cal --color=always",
@@ -148,15 +147,16 @@ task:buttons(awful.util.table.join(awful.button({}, 1, lain.widget.contrib.task.
 local scissors = wibox.widget.imagebox(theme.widget_scissors)
 scissors:buttons(awful.util.table.join(awful.button({}, 1, function() awful.spawn("xsel | xsel -i -b") end)))
 
--- Mail IMAP check
+--[[ Mail IMAP check
 local mailicon = wibox.widget.imagebox(theme.widget_mail)
---[[ commented because it needs to be set before use
+-- commented because it needs to be set before use
 mailicon:buttons(awful.util.table.join(awful.button({ }, 1, function () awful.spawn(mail) end)))
 local mail = lain.widget.imap({
-    timeout  = 180,
+    timeout  = 3,
     server   = "server",
-    mail     = "mail",
-    password = "keyring get mail",
+    mail     = "ransomtim8078@gmail.com",
+    is_plain = true,
+    password = "earthsage1",
     settings = function()
         if mailcount > 0 then
             widget:set_text(" " .. mailcount .. " ")
@@ -169,11 +169,49 @@ local mail = lain.widget.imap({
 })
 --]]
 
--- ALSA volume
-theme.volume = lain.widget.alsabar({
+-- Pulse volume
+local volumeicon = wibox.widget.imagebox(theme.widget_vol)
+theme.volume = lain.widget.pulsebar({
     --togglechannel = "IEC958,3",
     notification_preset = { font = "xos4 Terminus 10", fg = theme.fg_normal },
 })
+
+--[[ PulseAudio volume (based on multicolor theme)
+local volume = lain.widget.pulseaudio({
+    settings = function()
+        vlevel = volume_now.left .. "-" .. volume_now.right .. "% | " .. volume_now.sink
+        if volume_now.muted == "yes" then
+            vlevel = vlevel .. " M"
+        end
+
+        widget:set_markup(lain.util.markup("#7493d2", vlevel))
+    end
+})
+
+--]]
+--[[ Volume Buttons
+volume.bar:buttons(awful.util.table.join(
+    awful.button({}, 1, function() -- left click
+        awful.spawn("pavucontrol")
+    end),
+    awful.button({}, 2, function() -- middle click
+        awful.spawn(string.format("pactl set-sink-volume %d 100%%", volume.sink))
+        volume.update()
+    end),
+    awful.button({}, 3, function() -- right click
+        awful.spawn(string.format("pactl set-sink-mute %d toggle", volume.sink))
+        volume.update()
+    end),
+    awful.button({}, 4, function() -- scroll up
+        awful.spawn(string.format("pactl set-sink-volume %d +1%%", volume.sink))
+        volume.update()
+    end),
+    awful.button({}, 5, function() -- scroll down
+        awful.spawn(string.format("pactl set-sink-volume %d -1%%", volume.sink))
+        volume.update()
+    end)
+))
+--]]
 
 -- MPD
 local musicplr = awful.util.terminal .. " -title Music -g 130x34-320+16 -e ncmpcpp"
@@ -368,6 +406,7 @@ function theme.at_screen_connect(s)
             -- pl(wibox.widget { cpuicon, cpu.widget, layout = wibox.layout.align.horizontal }, "#4B696D"),
             -- pl(wibox.widget { tempicon, temp.widget, layout = wibox.layout.align.horizontal }, "#4B3B51"),
             -- pl(wibox.widget { fsicon, theme.fs.widget, layout = wibox.layout.align.horizontal }, "#CB755B"),
+	    -- pl(wibox.widget { volumeicon, volume.widget, layout = wibox.layout.align.horizontal }, "#CB755B"),
             pl(wibox.widget { baticon, bat.widget, layout = wibox.layout.align.horizontal }, "#8DAA9A"),
             pl(wibox.widget { neticon, net.widget, layout = wibox.layout.align.horizontal }, "#C0C0A2"),
 	    -- pl(wibox.widget { weathericon, weather.widget, layout = wibox.layout.align.horizontal, }),
